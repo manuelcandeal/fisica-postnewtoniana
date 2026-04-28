@@ -1,0 +1,11 @@
+{
+  "name": "fisica-postnewtoniana",
+  "version": "1.0.0",
+  "description": "Aquest projecte extreu automàticament totes les notes de Google NotebookLM Studio i les exporta com a PDFs. La llista de notes s'obté directament del quadern, sense dependre del directori de vídeos.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

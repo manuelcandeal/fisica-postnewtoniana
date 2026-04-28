@@ -1,0 +1,13 @@
+# Normalitza tots els fitxers de text a LF al repositori
+* text=auto eol=lf
+
+# Fitxers binaris: sense conversió
+*.pdf binary
+*.mp4 binary
+*.mkv binary
+*.avi binary
+*.mov binary
+*.webm binary
+*.png binary
+*.jpg binary
+*.zip binary
