@@ -242,7 +242,7 @@ Per enviar una pregunta a NotebookLM i rebre la resposta per consola:
 
 ```
 node Scripts/preguntar.js <pregunta>
-node Scripts/preguntar.js <pregunta> --show-browser
+node Scripts/preguntar.js <pregunta> --headless
 ```
 
 o bé:
@@ -256,17 +256,17 @@ npm run preguntar -- "text de la pregunta"
 | Argument | Obligatori | Descripció |
 |---|---|---|
 | `<pregunta>` | Sí | Text de la pregunta al quadern |
-| `--show-browser` | No | Mostra la finestra de Chrome durant la consulta |
+| `--headless` | No | Executa el navegador sense finestra (no recomanat) |
 
 **Exemples:**
 
 ```
 node Scripts/preguntar.js "Quina és la diferència entre coordenades de Boyer-Lindquist i Schwarzschild?"
-node Scripts/preguntar.js "Explica el formalisme post-newtonià" --show-browser
+node Scripts/preguntar.js "Explica el formalisme post-newtonià"
 node Scripts/preguntar.js "Quins són els termes de correcció PN d'ordre 2 a l'Hamiltonià?"
 ```
 
-La resposta s'imprimeix formatada per consola. El navegador s'obre en segon pla (headless) per defecte; `--show-browser` el fa visible, útil per depurar si la resposta no arriba.
+La resposta s'imprimeix formatada per consola. El navegador s'obre sempre en mode visible perquè NotebookLM no carrega correctament en mode headless.
 
 > **Nota:** Cada invocació obre una nova sessió de navegador. Inclou tota la informació necessària a la pregunta, ja que no hi ha context persistent entre crides.
 
@@ -445,13 +445,13 @@ Envia una pregunta a NotebookLM via automatització del navegador i mostra la re
 
 ```
 node Scripts/preguntar.js <pregunta>
-node Scripts/preguntar.js <pregunta> --show-browser
+node Scripts/preguntar.js <pregunta> --headless
 ```
 
 | Argument | Obligatori | Descripció |
 |---|---|---|
 | `<pregunta>` | Sí | Text de la pregunta |
-| `--show-browser` | No | Mostra el navegador Chrome durant la consulta |
+| `--headless` | No | Executa el navegador sense finestra (no recomanat) |
 
 Cada crida obre una nova sessió de navegador independent. El temps de resposta depèn de la complexitat de la pregunta i la velocitat de NotebookLM (habitualment 15–60 segons).
 
@@ -604,4 +604,4 @@ Crea el `.venv`, instal·la les dependències de `requirements.txt` i instal·la
 | `Could not find note: <nom>` | La nota no existeix al quadern | Crea la nota al Studio de NotebookLM |
 | `UnicodeEncodeError` | Python no pot imprimir caràcters especials al terminal | Ja corregit: el Node.js força `PYTHONIOENCODING=utf-8` |
 | PDF no es genera (HTML sí) | `page.pdf()` no funciona en mode visible | Ja corregit: el PDF es genera amb un browser headless separat |
-| `preguntar.js` no retorna resposta | NotebookLM tarda massa o la sessió ha expirat | Comprova auth amb `npm run auth`; prova amb `--show-browser` |
+| `preguntar.js` no retorna resposta | NotebookLM tarda massa o la sessió ha expirat | Comprova auth amb `npm run auth`; verifica que el navegador s'obre (no usar `--headless`) |

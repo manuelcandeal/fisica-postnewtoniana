@@ -13,11 +13,11 @@
  *
  * Ús:
  *  node Scripts/preguntar.js <pregunta>
- *  node Scripts/preguntar.js <pregunta> --show-browser
+ *  node Scripts/preguntar.js <pregunta> --headless
  *
  * Exemples:
  *  node Scripts/preguntar.js "Quina és la diferència entre coordenades de Boyer-Lindquist i Schwarzschild?"
- *  node Scripts/preguntar.js "Explica el formalisme post-newtonià" --show-browser
+ *  node Scripts/preguntar.js "Explica el formalisme post-newtonià" --headless
  */
 
 const path = require('path');
@@ -38,17 +38,20 @@ const SEPARATOR_WIDTH = 60;
 
 /**
  * Envia una pregunta al quadern de NotebookLM i retorna la resposta.
+ * Sempre usa el navegador visible perquè NotebookLM no carrega correctament
+ * en mode headless. El flag `--headless` permet forçar el mode sense finestra
+ * si en algun moment NotebookLM ho suporta.
  *
- * @param {string}  question    - Text de la pregunta.
- * @param {boolean} showBrowser - Si és `true`, mostra la finestra del navegador.
+ * @param {string}  question - Text de la pregunta.
+ * @param {boolean} headless - Si és `true`, executa el navegador sense finestra.
  * @returns {Promise<string>} Text de la resposta de NotebookLM.
  */
-function askQuestion(question, showBrowser) {
+function askQuestion(question, headless) {
   const args = [
-    '--question',    question,
+    '--question',     question,
     '--notebook-url', NOTEBOOK_URL,
   ];
-  if (showBrowser) args.push('--show-browser');
+  if (!headless) args.push('--show-browser');
   return runPython(ASK_SCRIPT, args);
 }
 
@@ -63,20 +66,20 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
-    console.log('Ús: node Scripts/preguntar.js <pregunta> [--show-browser]');
+    console.log('Ús: node Scripts/preguntar.js <pregunta> [--headless]');
     console.log('');
     console.log('Arguments:');
-    console.log('  <pregunta>      Text de la pregunta al quadern (obligatori)');
-    console.log('  --show-browser  Mostra la finestra del navegador durant la consulta');
+    console.log('  <pregunta>  Text de la pregunta al quadern (obligatori)');
+    console.log('  --headless  Executa el navegador sense finestra (no recomanat)');
     console.log('');
     console.log('Exemples:');
     console.log('  node Scripts/preguntar.js "Quina és la diferència entre coordenades de Boyer-Lindquist i Schwarzschild?"');
-    console.log('  node Scripts/preguntar.js "Explica el formalisme post-newtonià" --show-browser');
+    console.log('  node Scripts/preguntar.js "Explica el formalisme post-newtonià"');
     process.exit(0);
   }
 
-  const showBrowser = args.includes('--show-browser');
-  const questionArgs = args.filter(a => a !== '--show-browser');
+  const headless = args.includes('--headless');
+  const questionArgs = args.filter(a => a !== '--headless');
   const question = questionArgs.join(' ');
 
   if (!question.trim()) {
@@ -88,7 +91,7 @@ async function main() {
   console.log('');
 
   try {
-    const output = await askQuestion(question, showBrowser);
+    const output = await askQuestion(question, headless);
 
     // La resposta de ask_question.py inclou línies de log i la resposta final
     // Busquem el bloc entre les línies separadores "======..."
