@@ -1,5 +1,6 @@
 /**
  * @file crear_pdfs.js
+ * @module crear_pdfs
  * @description Genera un PDF per cada nota que existeix al quadern de Google
  * NotebookLM Studio. Primer obté la llista de notes directament del quadern
  * (via `list_studio_notes.py`) i després extreu i exporta cada nota com a PDF
@@ -16,74 +17,29 @@
  *  node Scripts/crear_pdfs.js --rewrite  → sobreescriu tots els PDFs
  */
 
-const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { NOTEBOOK_URL, EXTRACT_SCRIPT } = require('./config');
+const { runPython, listNotes } = require('./utils');
 
-/** URL del quadern de NotebookLM d'on s'obtenen les notes. */
-const NOTEBOOK_URL = 'https://notebooklm.google.com/notebook/765a4848-2fab-4479-8e50-3761bc1f3754';
-
-/** Directori on es desen els PDFs generats. Es crea automàticament si no existeix. */
+/**
+ * Directori on es desen els PDFs generats. Es crea automàticament si no existeix.
+ * @constant {string}
+ */
 const PDFS_DIR = path.join(__dirname, '..', 'pdfs');
 
-/** Executable Python de l'entorn virtual de la skill. */
-const PYTHON = path.join(__dirname, '..', '.claude', 'skills', 'notebooklm', '.venv', 'Scripts', 'python');
-
-/** Script Python que llista totes les notes del quadern i retorna un JSON array. */
-const LIST_SCRIPT = path.join(__dirname, '..', '.claude', 'skills', 'notebooklm', 'scripts', 'list_studio_notes.py');
-
-/** Script Python que extreu una nota i genera el PDF corresponent. */
-const EXTRACT_SCRIPT = path.join(__dirname, '..', '.claude', 'skills', 'notebooklm', 'scripts', 'extract_studio_note.py');
-
-/** Amplada en caràcters de la barra de progrés. */
+/**
+ * Amplada en caràcters de la barra de progrés.
+ * @constant {number}
+ */
 const BAR_WIDTH = 40;
 
-/** Si és true, sobreescriu els PDFs ja existents en lloc de saltar-los. */
+/**
+ * Si és `true`, sobreescriu els PDFs ja existents en lloc de saltar-los.
+ * S'activa passant l'argument `--rewrite` a la línia de comandes.
+ * @constant {boolean}
+ */
 const REWRITE = process.argv.includes('--rewrite');
-
-/** Variables d'entorn comunes per als subprocessos Python (força UTF-8). */
-const PYTHON_ENV = { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' };
-
-/**
- * Executa un script Python i retorna el contingut de stdout com a string.
- *
- * @param {string}   script - Path absolut al script Python.
- * @param {string[]} args   - Arguments addicionals per al script.
- * @returns {Promise<string>} Contingut de stdout si el procés acaba amb codi 0.
- * @throws {Error} Si el procés acaba amb codi diferent de 0.
- */
-function runPython(script, args) {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(PYTHON, [script, ...args], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: PYTHON_ENV,
-    });
-    let stdout = '';
-    let stderr = '';
-    proc.stdout.on('data', d => { stdout += d.toString(); });
-    proc.stderr.on('data', d => { stderr += d.toString(); });
-    proc.on('close', code => {
-      if (code === 0) resolve(stdout);
-      else {
-        const lines = (stderr + stdout).trim().split('\n').filter(l => l.trim());
-        reject(new Error(lines.pop() || `codi ${code}`));
-      }
-    });
-    proc.on('error', reject);
-  });
-}
-
-/**
- * Obté la llista de títols de notes del quadern de NotebookLM.
- * Obre Chrome (mode visible) per navegar el quadern i llegir els artefactes
- * del Studio. Retorna un array JSON parsejat.
- *
- * @returns {Promise<string[]>} Array amb els títols de totes les notes trobades.
- */
-async function listNotes() {
-  const json = await runPython(LIST_SCRIPT, ['--notebook-url', NOTEBOOK_URL]);
-  return JSON.parse(json);
-}
 
 /**
  * Extreu una nota de NotebookLM i genera el PDF corresponent.

@@ -1,6 +1,6 @@
 # Generació de PDFs des de NotebookLM
 
-Aquest projecte extreu automàticament totes les notes de Google NotebookLM Studio i les exporta com a PDFs. La llista de notes s'obté directament del quadern, sense dependre del directori de vídeos.
+Aquest projecte extreu automàticament totes les notes de Google NotebookLM Studio i les exporta com a PDFs. Inclou eines per llistar les notes disponibles i per generar-ne els PDFs en bloc.
 
 ---
 
@@ -42,7 +42,10 @@ projecte/
 │           └── SKILL.md
 ├── pdfs/                              ← PDFs generats (es crea automàticament)
 └── Scripts/
-    └── crear_pdfs.js
+    ├── config.js                      ← constants i paths compartits (URL, Python, scripts)
+    ├── utils.js                       ← funcions compartides (runPython, listNotes)
+    ├── show_notes.js                  ← llista les notes del quadern per consola
+    └── crear_pdfs.js                  ← genera un PDF per cada nota del quadern
 ```
 
 ---
@@ -121,19 +124,40 @@ Per comprovar l'estat d'autenticació en qualsevol moment:
 
 ## Pas 4 — Configurar el quadern
 
-Obre `Scripts/crear_pdfs.js` i verifica la constant `NOTEBOOK_URL`:
+Obre `Scripts/config.js` i verifica la constant `NOTEBOOK_URL`:
 
 ```js
 const NOTEBOOK_URL = 'https://notebooklm.google.com/notebook/765a4848-2fab-4479-8e50-3761bc1f3754';
 ```
 
-Substitueix la URL pel quadern que vols usar si cal.
+Substitueix la URL pel quadern que vols usar si cal. Tots els scripts llegiran la URL d'aquí.
 
 ---
 
-## Pas 5 — Executar la generació de PDFs
+## Pas 5 — Executar els scripts
 
-Des de l'arrel del projecte:
+### Llistar les notes del quadern
+
+Per veure totes les notes disponibles al quadern:
+
+```
+node Scripts/show_notes.js
+```
+
+Sortida d'exemple:
+
+```
+Obtenint la llista de notes del quadern...
+Notes trobades:
+  1. 1. FISICA POST NEWTONIANA
+  2. 2. CONCEPTOS FUNDAMENTALES
+  3. 3. MÉTODOS DE APROXIMACIÓN
+  ...
+```
+
+### Generar els PDFs
+
+Per generar un PDF per cada nota del quadern:
 
 ```
 node Scripts/crear_pdfs.js
@@ -158,6 +182,55 @@ Per regenerar tots els PDFs encara que ja existeixin:
 ```
 node Scripts/crear_pdfs.js --rewrite
 ```
+
+---
+
+## Referència de scripts Node.js
+
+### `Scripts/config.js` — Configuració centralitzada
+
+Exporta totes les constants i paths compartits per la resta de scripts:
+
+| Constant | Descripció |
+|---|---|
+| `NOTEBOOK_URL` | URL del quadern de NotebookLM |
+| `PYTHON` | Path a l'executable Python del `.venv` |
+| `LIST_SCRIPT` | Path a `list_studio_notes.py` |
+| `EXTRACT_SCRIPT` | Path a `extract_studio_note.py` |
+| `PYTHON_ENV` | Variables d'entorn per als subprocessos Python (força UTF-8) |
+
+---
+
+### `Scripts/utils.js` — Funcions compartides
+
+Conté les funcions utilitàries que usen tots els scripts:
+
+**`runPython(script, args)`** — Executa un script Python i retorna stdout com a string. Llança un `Error` si el procés acaba amb codi diferent de 0.
+
+**`listNotes()`** — Invoca `list_studio_notes.py` i retorna un `Promise<string[]>` amb els títols de totes les notes del quadern.
+
+---
+
+### `Scripts/show_notes.js` — Llistar notes
+
+Mostra per consola la llista numerada de totes les notes del quadern. Útil per verificar quines notes existeixen abans de generar PDFs.
+
+```
+node Scripts/show_notes.js
+```
+
+---
+
+### `Scripts/crear_pdfs.js` — Generar PDFs
+
+Genera un PDF per cada nota del quadern. Salta els PDFs ja existents per defecte.
+
+```
+node Scripts/crear_pdfs.js             # salta els PDFs ja existents
+node Scripts/crear_pdfs.js --rewrite   # sobreescriu tots els PDFs
+```
+
+Els PDFs es desen a `pdfs/<títol_nota>.pdf`. El directori es crea automàticament si no existeix.
 
 ---
 
