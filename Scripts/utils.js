@@ -28,7 +28,11 @@ function runPython(script, args) {
     proc.on('close', code => {
       if (code === 0) resolve(stdout);
       else {
-        const lines = (stderr + stdout).trim().split('\n').filter(l => l.trim());
+        const lines = (stderr + stdout)
+          .trim()
+          .split('\n')
+          .map(l => l.trim())
+          .filter(l => l && !/^-\s*\[pid=\d+\]/.test(l));
         reject(new Error(lines.pop() || `codi ${code}`));
       }
     });

@@ -19,8 +19,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const { NOTEBOOK_URL, EXTRACT_SCRIPT } = require('./config');
-const { runPython, listNotes } = require('./utils');
+const { NOTEBOOK_URL } = require('./config');
+const { listNotes } = require('./utils');
+const { extractNote } = require('./extract_nota');
 
 /**
  * Directori on es desen els PDFs generats. Es crea automàticament si no existeix.
@@ -40,24 +41,6 @@ const BAR_WIDTH = 40;
  * @constant {boolean}
  */
 const REWRITE = process.argv.includes('--rewrite');
-
-/**
- * Extreu una nota de NotebookLM i genera el PDF corresponent.
- * Obre Chrome (mode visible) per cercar la nota pel títol, extreu el contingut
- * HTML i el converteix a PDF amb un Chrome headless separat.
- *
- * @param {string} noteTitle - Títol exacte de la nota al quadern de NotebookLM.
- * @returns {Promise<void>} Es resol si el PDF es genera correctament.
- */
-function extractNote(noteTitle) {
-  const outputPath = path.join(PDFS_DIR, noteTitle + '.pdf');
-  return runPython(EXTRACT_SCRIPT, [
-    '--notebook-url', NOTEBOOK_URL,
-    '--note-title',   noteTitle,
-    '--output',       outputPath,
-    '--show-browser',
-  ]);
-}
 
 /**
  * Dibuixa o actualitza la barra de progrés a la mateixa línia del terminal.
@@ -116,7 +99,7 @@ async function main() {
 
     drawProgressBar(i, total, note);
     try {
-      await extractNote(note);
+      await extractNote(note, pdfPath);
     } catch (err) {
       errors.push({ note, msg: err.message });
     }

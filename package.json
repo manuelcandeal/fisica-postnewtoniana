@@ -4,8 +4,12 @@
   "description": "Aquest projecte extreu automàticament totes les notes de Google NotebookLM Studio i les exporta com a PDFs. La llista de notes s'obté directament del quadern, sense dependre del directori de vídeos.",
   "main": "index.js",
   "scripts": {
-    "pdfs": "node scripts/crear_pdfs.js",
-    "notes": "node scripts/show_notes.js"
+    "notes": "node Scripts/show_notes.js",
+    "pdfs": "node Scripts/crear_pdfs.js",
+    "extract": "node Scripts/extract_nota.js",
+    "preguntar": "node Scripts/preguntar.js",
+    "resum": "node Scripts/resum.js",
+    "auth": "node Scripts/auth_status.js"
   },
   "author": "",
   "license": "ISC"

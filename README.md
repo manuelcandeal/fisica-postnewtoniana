@@ -1,6 +1,6 @@
 # Generació de PDFs des de NotebookLM
 
-Aquest projecte extreu automàticament totes les notes de Google NotebookLM Studio i les exporta com a PDFs. Inclou eines per llistar les notes disponibles i per generar-ne els PDFs en bloc.
+Aquest projecte extreu automàticament totes les notes de Google NotebookLM Studio i les exporta com a PDFs. Inclou eines per llistar les notes disponibles, generar-ne els PDFs en bloc o individualment, fer preguntes al quadern i comprovar l'estat d'autenticació.
 
 ---
 
@@ -27,6 +27,7 @@ projecte/
 │           │   ├── browser_session.py  ← gestió de sessions de navegador
 │           │   ├── cleanup_manager.py  ← neteja de fitxers temporals
 │           │   ├── config.py           ← constants i paths centralitzats
+│           │   ├── ask_question.py     ← fa preguntes al quadern
 │           │   ├── extract_studio_note.py ← extreu una nota i genera el PDF
 │           │   ├── list_studio_notes.py   ← llista totes les notes del quadern
 │           │   ├── notebook_manager.py ← gestió de la biblioteca de quaderns
@@ -42,10 +43,14 @@ projecte/
 │           └── SKILL.md
 ├── pdfs/                              ← PDFs generats (es crea automàticament)
 └── Scripts/
-    ├── config.js                      ← constants i paths compartits (URL, Python, scripts)
-    ├── utils.js                       ← funcions compartides (runPython, listNotes)
-    ├── show_notes.js                  ← llista les notes del quadern per consola
-    └── crear_pdfs.js                  ← genera un PDF per cada nota del quadern
+    ├── config.js          ← constants i paths compartits (URL, Python, scripts)
+    ├── utils.js           ← funcions compartides (runPython, listNotes)
+    ├── auth_status.js     ← comprova l'estat de l'autenticació Google
+    ├── show_notes.js      ← llista les notes del quadern per consola
+    ├── extract_nota.js    ← extreu una nota concreta i genera el seu PDF
+    ├── crear_pdfs.js      ← genera un PDF per cada nota del quadern
+    ├── preguntar.js       ← fa una pregunta al quadern i mostra la resposta
+    └── resum.js           ← estat del projecte: notes, PDFs generats i pendents
 ```
 
 ---
@@ -110,14 +115,14 @@ La skill usa automació de navegador per accedir a NotebookLM. Cal autenticar-se
 
 2. S'obrirà una finestra de **Chrome controlada per Patchright** (diferent del teu Chrome habitual). Inicia sessió amb el compte de Google que té accés al quadern de NotebookLM.
 
-3. Un cop iniciada la sessió i visible la pàgina de NotebookLM, el script guardarà les cookies automàticament a `.claude\skills\notebooklm\data\browser_state\state.json` i tancarà el navegador.
+3. Un cop iniciada la sessió i visible la pàgina de NotebookLM, l'script guardarà les cookies automàticament a `.claude\skills\notebooklm\data\browser_state\state.json` i tancarà el navegador.
 
 > **Nota:** Les cookies duren aproximadament 7 dies. Si el procés torna a demanar autenticació, repeteix aquest pas.
 
 Per comprovar l'estat d'autenticació en qualsevol moment:
 
 ```
-".claude\skills\notebooklm\.venv\Scripts\python.exe" ".claude\skills\notebooklm\scripts\auth_manager.py" status
+node Scripts/auth_status.js
 ```
 
 ---
@@ -144,6 +149,12 @@ Per veure totes les notes disponibles al quadern:
 node Scripts/show_notes.js
 ```
 
+o bé:
+
+```
+npm run notes
+```
+
 Sortida d'exemple:
 
 ```
@@ -155,12 +166,20 @@ Notes trobades:
   ...
 ```
 
-### Generar els PDFs
+---
+
+### Generar tots els PDFs
 
 Per generar un PDF per cada nota del quadern:
 
 ```
 node Scripts/crear_pdfs.js
+```
+
+o bé:
+
+```
+npm run pdfs
 ```
 
 El programa:
@@ -175,13 +194,183 @@ Trobades 20 notes al quadern.
 [████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░]  30% (6/20) 7. PRINCIPIO DE ACCIÓN ESTACIONARIA…
 ```
 
-### Sobreescriure PDFs existents
-
 Per regenerar tots els PDFs encara que ja existeixin:
 
 ```
 node Scripts/crear_pdfs.js --rewrite
 ```
+
+---
+
+### Extreure una nota concreta
+
+Per generar el PDF d'una sola nota sense processar tot el quadern:
+
+```
+node Scripts/extract_nota.js <títol>
+node Scripts/extract_nota.js <títol> --output <path.pdf>
+```
+
+o bé (cal passar el títol com a argument addicional):
+
+```
+npm run extract -- "2. CONCEPTOS FUNDAMENTALES"
+```
+
+**Arguments:**
+
+| Argument | Obligatori | Descripció |
+|---|---|---|
+| `<títol>` | Sí | Títol o fragment del títol de la nota |
+| `--output <path.pdf>` | No | Path de sortida del PDF. Per defecte: `pdfs/<títol>.pdf` |
+
+**Exemples:**
+
+```
+node Scripts/extract_nota.js "2. CONCEPTOS FUNDAMENTALES"
+node Scripts/extract_nota.js "conceptos" --output pdfs/conceptos.pdf
+node Scripts/extract_nota.js "ones gravitacionals"
+```
+
+La cerca del títol és parcial: n'hi ha prou amb un fragment significatiu. Si el PDF de sortida no s'especifica, es desa a `pdfs/<títol>.pdf` (sanititzant caràcters no vàlids per al nom de fitxer).
+
+---
+
+### Fer una pregunta al quadern
+
+Per enviar una pregunta a NotebookLM i rebre la resposta per consola:
+
+```
+node Scripts/preguntar.js <pregunta>
+node Scripts/preguntar.js <pregunta> --show-browser
+```
+
+o bé:
+
+```
+npm run preguntar -- "text de la pregunta"
+```
+
+**Arguments:**
+
+| Argument | Obligatori | Descripció |
+|---|---|---|
+| `<pregunta>` | Sí | Text de la pregunta al quadern |
+| `--show-browser` | No | Mostra la finestra de Chrome durant la consulta |
+
+**Exemples:**
+
+```
+node Scripts/preguntar.js "Quina és la diferència entre coordenades de Boyer-Lindquist i Schwarzschild?"
+node Scripts/preguntar.js "Explica el formalisme post-newtonià" --show-browser
+node Scripts/preguntar.js "Quins són els termes de correcció PN d'ordre 2 a l'Hamiltonià?"
+```
+
+La resposta s'imprimeix formatada per consola. El navegador s'obre en segon pla (headless) per defecte; `--show-browser` el fa visible, útil per depurar si la resposta no arriba.
+
+> **Nota:** Cada invocació obre una nova sessió de navegador. Inclou tota la informació necessària a la pregunta, ja que no hi ha context persistent entre crides.
+
+---
+
+### Veure el resum de l'estat del projecte
+
+Per veure quantes notes hi ha al quadern, quins PDFs s'han generat i quins falten:
+
+```
+node Scripts/resum.js
+```
+
+o bé:
+
+```
+npm run resum
+```
+
+Sortida d'exemple:
+
+```
+Obtenint llista de notes del quadern...
+
+Quadern: 20 notes
+PDFs generats: 15 / 20
+Mida total PDFs: 42.3 MB
+
+Generats:
+  ✓ 1. FISICA POST NEWTONIANA
+  ✓ 2. CONCEPTOS FUNDAMENTALES
+  ...
+
+Pendents:
+  ✗ 16. ONES GRAVITACIONALS
+  ✗ 17. DETECTORS INTERFEROMÈTRICS
+  ...
+```
+
+**Arguments:**
+
+| Argument | Obligatori | Descripció |
+|---|---|---|
+| `--pendents` | No | Mostra únicament les notes que encara no tenen PDF |
+
+**Exemples:**
+
+```
+node Scripts/resum.js
+node Scripts/resum.js --pendents
+```
+
+---
+
+### Comprovar l'estat d'autenticació
+
+Per verificar si les cookies de sessió de Google són vàlides:
+
+```
+node Scripts/auth_status.js
+```
+
+o bé:
+
+```
+npm run auth
+```
+
+Sortida d'exemple (sessió activa):
+
+```
+Comprovant estat d'autenticació...
+
+Authenticated: true
+Last login: 2025-04-26T10:32:00
+
+Dies restants estimats: ~4.8 dies
+```
+
+Sortida d'exemple (sessió expirada):
+
+```
+Comprovant estat d'autenticació...
+
+Not authenticated
+
+Per autenticar-se:
+  .claude\skills\notebooklm\.venv\Scripts\python.exe .claude\skills\notebooklm\scripts\auth_manager.py setup
+```
+
+Si la sessió ha expirat o no existeix, l'script mostra les instruccions per fer el login de nou.
+
+---
+
+## Referència ràpida de scripts Node.js
+
+| Script | Comanda npm | Descripció |
+|---|---|---|
+| `Scripts/show_notes.js` | `npm run notes` | Llista les notes del quadern |
+| `Scripts/crear_pdfs.js` | `npm run pdfs` | Genera PDFs de totes les notes |
+| `Scripts/extract_nota.js` | `npm run extract -- <títol>` | Genera el PDF d'una nota concreta |
+| `Scripts/preguntar.js` | `npm run preguntar -- <pregunta>` | Fa una pregunta al quadern |
+| `Scripts/resum.js` | `npm run resum` | Mostra l'estat del projecte |
+| `Scripts/auth_status.js` | `npm run auth` | Comprova l'estat d'autenticació |
 
 ---
 
@@ -221,7 +410,7 @@ node Scripts/show_notes.js
 
 ---
 
-### `Scripts/crear_pdfs.js` — Generar PDFs
+### `Scripts/crear_pdfs.js` — Generar PDFs en bloc
 
 Genera un PDF per cada nota del quadern. Salta els PDFs ja existents per defecte.
 
@@ -231,6 +420,67 @@ node Scripts/crear_pdfs.js --rewrite   # sobreescriu tots els PDFs
 ```
 
 Els PDFs es desen a `pdfs/<títol_nota>.pdf`. El directori es crea automàticament si no existeix.
+
+---
+
+### `Scripts/extract_nota.js` — Extreure una nota concreta
+
+Genera el PDF d'una única nota especificada per títol o fragment. Alternativa a `crear_pdfs.js` quan només cal regenerar un fitxer concret.
+
+```
+node Scripts/extract_nota.js <títol>
+node Scripts/extract_nota.js <títol> --output <path.pdf>
+```
+
+| Argument | Obligatori | Descripció |
+|---|---|---|
+| `<títol>` | Sí | Títol complet o fragment del títol de la nota |
+| `--output <path.pdf>` | No | Path de sortida. Per defecte: `pdfs/<títol_sanititzat>.pdf` |
+
+---
+
+### `Scripts/preguntar.js` — Fer preguntes al quadern
+
+Envia una pregunta a NotebookLM via automatització del navegador i mostra la resposta per consola. Fa servir `ask_question.py` de la skill.
+
+```
+node Scripts/preguntar.js <pregunta>
+node Scripts/preguntar.js <pregunta> --show-browser
+```
+
+| Argument | Obligatori | Descripció |
+|---|---|---|
+| `<pregunta>` | Sí | Text de la pregunta |
+| `--show-browser` | No | Mostra el navegador Chrome durant la consulta |
+
+Cada crida obre una nova sessió de navegador independent. El temps de resposta depèn de la complexitat de la pregunta i la velocitat de NotebookLM (habitualment 15–60 segons).
+
+---
+
+### `Scripts/resum.js` — Estat del projecte
+
+Mostra un resum creuat entre les notes del quadern i els PDFs del directori `pdfs/`: quants s'han generat, quants falten i la mida total.
+
+```
+node Scripts/resum.js           # resum complet
+node Scripts/resum.js --pendents  # només notes sense PDF
+```
+
+| Argument | Obligatori | Descripció |
+|---|---|---|
+| `--pendents` | No | Mostra únicament les notes sense PDF generat |
+
+---
+
+### `Scripts/auth_status.js` — Verificació d'autenticació
+
+Comprova si les cookies de sessió de Google emmagatzemades a `data/browser_state/state.json` són vàlides. Si pot determinar la data del darrer login, estima els dies restants fins a l'expiració (~7 dies de vida útil).
+
+```
+node Scripts/auth_status.js
+```
+
+Si la sessió ha expirat, mostra la comanda exacta per renovar-la.
 
 ---
 
@@ -249,6 +499,24 @@ python auth_manager.py status
 ```
 
 Les cookies es guarden a `data/browser_state/state.json` i el perfil de Chrome a `data/browser_state/browser_profile/`. Usa un enfocament híbrid (perfil persistent + injecció manual de cookies) per superar un bug de Playwright amb les session cookies.
+
+---
+
+### `ask_question.py` — Fer preguntes al quadern
+
+Obre el quadern de NotebookLM, introdueix la pregunta i espera la resposta. Torna la resposta per stdout.
+
+```
+python ask_question.py --question <pregunta> --notebook-url <URL>
+python ask_question.py --question <pregunta> --notebook-url <URL> --show-browser
+```
+
+| Argument | Descripció |
+|---|---|
+| `--question` | Text de la pregunta (obligatori) |
+| `--notebook-url` | URL del quadern (obligatori si no hi ha quadern actiu a la biblioteca) |
+| `--notebook-id` | ID del quadern a la biblioteca (alternativa a `--notebook-url`) |
+| `--show-browser` | Mostra el navegador durant la consulta |
 
 ---
 
@@ -336,3 +604,4 @@ Crea el `.venv`, instal·la les dependències de `requirements.txt` i instal·la
 | `Could not find note: <nom>` | La nota no existeix al quadern | Crea la nota al Studio de NotebookLM |
 | `UnicodeEncodeError` | Python no pot imprimir caràcters especials al terminal | Ja corregit: el Node.js força `PYTHONIOENCODING=utf-8` |
 | PDF no es genera (HTML sí) | `page.pdf()` no funciona en mode visible | Ja corregit: el PDF es genera amb un browser headless separat |
+| `preguntar.js` no retorna resposta | NotebookLM tarda massa o la sessió ha expirat | Comprova auth amb `npm run auth`; prova amb `--show-browser` |
