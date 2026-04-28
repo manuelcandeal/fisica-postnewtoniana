@@ -4,9 +4,6 @@
 # Dades d'autenticació i perfil de Chrome (cookies de sessió, dades privades)
 .claude/skills/notebooklm/data/
 
-# Fitxers generats
-pdfs/
-
 # Vídeos (fitxers grans)
 videos/
 *.mp4
